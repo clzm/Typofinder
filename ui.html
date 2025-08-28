@@ -1,0 +1,394 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-8">
+    <title>Typofinder</title>
+    <style>
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            margin: 0;
+            padding: 16px;
+            background: #f8f9fa;
+            font-size: 12px;
+            line-height: 1.4;
+        }
+
+        .header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-bottom: 16px;
+            padding-bottom: 12px;
+            border-bottom: 1px solid #e1e5e9;
+        }
+
+        .title {
+            font-weight: 600;
+            font-size: 14px;
+            color: #1e1e1e;
+        }
+
+        .subtitle {
+            color: #8c8c8c;
+            font-size: 11px;
+            margin-top: 2px;
+        }
+
+        .extract-btn {
+            background: #0d99ff;
+            color: white;
+            border: none;
+            padding: 8px 16px;
+            border-radius: 6px;
+            cursor: pointer;
+            font-weight: 500;
+            font-size: 12px;
+            transition: background 0.2s;
+        }
+
+        .extract-btn:hover {
+            background: #0084e6;
+        }
+
+        .extract-btn:disabled {
+            background: #ccc;
+            cursor: not-allowed;
+        }
+
+        .styles-container {
+            max-height: 400px;
+            overflow-y: auto;
+            border-radius: 8px;
+            background: white;
+            border: 1px solid #e1e5e9;
+        }
+
+        .style-item {
+            padding: 12px;
+            border-bottom: 1px solid #f1f3f4;
+            transition: background 0.2s;
+        }
+
+        .style-item:hover {
+            background: #f8f9ff;
+        }
+
+        .style-item:last-child {
+            border-bottom: none;
+        }
+
+        .style-name {
+            font-weight: 600;
+            color: #1e1e1e;
+            margin-bottom: 4px;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+
+        .library-badge {
+            background: #4caf50;
+            color: white;
+            padding: 2px 6px;
+            border-radius: 3px;
+            font-size: 10px;
+            font-weight: 500;
+        }
+
+        .style-details {
+            color: #666;
+            font-size: 11px;
+            line-height: 1.3;
+        }
+
+        .style-property {
+            display: inline-block;
+            margin-right: 12px;
+            margin-bottom: 2px;
+        }
+
+        .property-label {
+            font-weight: 500;
+        }
+
+        .empty-state {
+            text-align: center;
+            padding: 40px 20px;
+            color: #8c8c8c;
+        }
+
+        .empty-icon {
+            font-size: 32px;
+            margin-bottom: 12px;
+            opacity: 0.5;
+        }
+
+        .loading {
+            text-align: center;
+            padding: 20px;
+            color: #8c8c8c;
+        }
+
+        .progress-container {
+            width: 100%;
+            height: 4px;
+            background: #e1e5e9;
+            border-radius: 2px;
+            overflow: hidden;
+            margin: 8px 0 12px 0;
+        }
+
+        .progress-bar {
+            height: 100%;
+            background: linear-gradient(90deg, #0d99ff, #40c4ff);
+            border-radius: 2px;
+            width: 0%;
+            transition: width 0.4s ease;
+        }
+
+        .loading-text {
+            font-size: 12px;
+            color: #666;
+            margin-top: 8px;
+            min-height: 16px;
+        }
+
+        .progress-info {
+            font-size: 11px;
+            color: #999;
+            margin-top: 4px;
+        }
+
+        .error {
+            background: #fee;
+            border: 1px solid #fcc;
+            color: #c33;
+            padding: 12px;
+            border-radius: 6px;
+            margin-bottom: 16px;
+            font-size: 11px;
+        }
+
+        .stats {
+            background: #e3f2fd;
+            border: 1px solid #bbdefb;
+            padding: 8px 12px;
+            border-radius: 6px;
+            margin-bottom: 16px;
+            font-size: 11px;
+            color: #1565c0;
+            text-align: center;
+        }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <div>
+            <div class="title">Typofinder</div>
+            <div class="subtitle">Styles typographiques des librairies</div>
+        </div>
+        <button id="extractBtn" class="extract-btn">Analyser</button>
+    </div>
+
+    <div id="errorContainer"></div>
+    <div id="statsContainer"></div>
+    <div id="loadingContainer"></div>
+    <div id="stylesContainer" class="styles-container" style="display: none;"></div>
+
+    <script>
+        let isLoading = false;
+        
+        // Éléments du DOM
+        const extractBtn = document.getElementById('extractBtn');
+        const stylesContainer = document.getElementById('stylesContainer');
+        const loadingContainer = document.getElementById('loadingContainer');
+        const errorContainer = document.getElementById('errorContainer');
+        const statsContainer = document.getElementById('statsContainer');
+
+        // Fonction pour afficher le loading
+        function showLoading() {
+            isLoading = true;
+            extractBtn.disabled = true;
+            loadingContainer.innerHTML = `
+                <div class="loading">
+                    <div class="loading-text">Initialisation de l'analyse...</div>
+                    <div class="progress-container">
+                        <div class="progress-bar" id="progressBar"></div>
+                    </div>
+                    <div class="progress-info" id="progressInfo"></div>
+                </div>
+            `;
+            stylesContainer.style.display = 'none';
+            errorContainer.innerHTML = '';
+            statsContainer.innerHTML = '';
+        }
+
+        // Fonction pour mettre à jour la progression
+        function updateProgress(current, total, pageName = '') {
+            const progressBar = document.getElementById('progressBar');
+            const loadingText = document.querySelector('.loading-text');
+            const progressInfo = document.getElementById('progressInfo');
+            
+            if (progressBar) {
+                const percentage = (current / total) * 100;
+                progressBar.style.width = `${percentage}%`;
+                
+                if (loadingText) {
+                    loadingText.textContent = `Analyse de la page "${pageName}"...`;
+                }
+                
+                if (progressInfo) {
+                    progressInfo.textContent = `${current} / ${total} pages analysées`;
+                }
+            }
+        }
+
+        // Fonction pour cacher le loading
+        function hideLoading() {
+            isLoading = false;
+            extractBtn.disabled = false;
+            loadingContainer.innerHTML = '';
+        }
+
+        // Fonction pour afficher une erreur
+        function showError(message) {
+            errorContainer.innerHTML = `<div class="error">${message}</div>`;
+        }
+
+        // Fonction pour formater la taille de police
+        function formatFontSize(fontSize) {
+            if (typeof fontSize === 'object' && fontSize.value !== undefined) {
+                return `${fontSize.value}${fontSize.unit || 'px'}`;
+            }
+            return `${fontSize}px`;
+        }
+
+        // Fonction pour formater l'interlignage
+        function formatLineHeight(lineHeight) {
+            if (!lineHeight) return 'Auto';
+            if (typeof lineHeight === 'object') {
+                if (lineHeight.unit === 'PERCENT') {
+                    return `${Math.round(lineHeight.value)}%`;
+                }
+                if (lineHeight.unit === 'PIXELS') {
+                    return `${lineHeight.value}px`;
+                }
+                return `${lineHeight.value}${lineHeight.unit.toLowerCase() || 'px'}`;
+            }
+            return lineHeight.toString();
+        }
+
+        // Fonction pour formater l'espacement des lettres
+        function formatLetterSpacing(spacing) {
+            if (!spacing) return '0';
+            if (typeof spacing === 'object') {
+                if (spacing.unit === 'PERCENT') {
+                    return `${spacing.value.toFixed(1)}%`;
+                }
+                return `${spacing.value}${spacing.unit || 'px'}`;
+            }
+            return spacing.toString();
+        }
+
+        // Fonction pour afficher les styles
+        function displayStyles(styles) {
+            hideLoading();
+            
+            // Masquer le header une fois les résultats affichés
+            document.querySelector('.header').style.display = 'none';
+            
+            if (styles.length === 0) {
+                stylesContainer.innerHTML = `
+                    <div class="empty-state">
+                        <div class="empty-icon">📝</div>
+                        <div>Aucun style typographique de librairie trouvé</div>
+                        <div style="font-size: 10px; margin-top: 8px; opacity: 0.7;">
+                            Seuls les styles provenant de librairies attachées sont affichés
+                        </div>
+                    </div>
+                `;
+            } else {
+                statsContainer.innerHTML = `
+                    <div class="stats">
+                        ${styles.length} style${styles.length > 1 ? 's' : ''} typographique${styles.length > 1 ? 's' : ''} trouvé${styles.length > 1 ? 's' : ''}
+                    </div>
+                `;
+                
+                const stylesHTML = styles.map(style => `
+                    <div class="style-item">
+                        <div class="style-name">
+                            ${style.name}
+                            ${style.remote ? '<span class="library-badge">Librairie</span>' : ''}
+                        </div>
+                        <div class="style-details">
+                            <span class="style-property">
+                                <span class="property-label">Police:</span> ${style.fontFamily} ${style.fontWeight}
+                            </span>
+                            <span class="style-property">
+                                <span class="property-label">Taille:</span> ${formatFontSize(style.fontSize)}
+                            </span>
+                            <span class="style-property">
+                                <span class="property-label">Interlignage:</span> ${formatLineHeight(style.lineHeight)}
+                            </span>
+                            ${style.letterSpacing && style.letterSpacing !== 0 ? `
+                                <span class="style-property">
+                                    <span class="property-label">Espacement:</span> ${formatLetterSpacing(style.letterSpacing)}
+                                </span>
+                            ` : ''}
+                            ${style.textCase && style.textCase !== 'ORIGINAL' ? `
+                                <span class="style-property">
+                                    <span class="property-label">Casse:</span> ${style.textCase}
+                                </span>
+                            ` : ''}
+                            ${style.description ? `
+                                <div style="margin-top: 6px; font-style: italic; opacity: 0.8;">
+                                    ${style.description}
+                                </div>
+                            ` : ''}
+                        </div>
+                    </div>
+                `).join('');
+                
+                stylesContainer.innerHTML = stylesHTML;
+            }
+            
+            stylesContainer.style.display = 'block';
+        }
+
+        // Event listener pour le bouton d'extraction
+        extractBtn.addEventListener('click', () => {
+            if (isLoading) return;
+            
+            console.log('Bouton cliqué - envoi du message');
+            showLoading();
+            parent.postMessage({
+                pluginMessage: { type: 'extract-styles' }
+            }, '*');
+        });
+
+        // Écouter les messages du plugin
+        window.onmessage = (event) => {
+            console.log('Message reçu:', event.data);
+            const msg = event.data.pluginMessage;
+            
+            if (msg && msg.type === 'progress-init') {
+                console.log('Initialisation progression:', msg.totalPages, 'pages');
+            } else if (msg && msg.type === 'progress-update') {
+                updateProgress(msg.currentPage, msg.totalPages, msg.pageName);
+                console.log('Mise à jour progression:', msg.currentPage, '/', msg.totalPages, '-', msg.pageName);
+            } else if (msg && msg.type === 'styles-extracted') {
+                displayStyles(msg.styles);
+            } else if (msg && msg.type === 'error') {
+                hideLoading();
+                showError(msg.message);
+            }
+        };
+
+        // Test de connexion au démarrage
+        window.onload = () => {
+            console.log('Plugin UI chargé');
+            // Ne pas lancer automatiquement l'extraction
+        };
+    </script>
+</body>
+</html>
