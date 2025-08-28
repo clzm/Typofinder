@@ -1,0 +1,1 @@
+- Mettre le plus gros numéro 8XL en premier puis jusqu'à XL. XL étant le plus grand

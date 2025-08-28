@@ -167,41 +167,88 @@ figma.ui.onmessage = msg => {
     figma.closePlugin();
   }
   
-  if (msg.type === 'select-nodes-with-style') {
+  if (msg.type === 'create-styles-frame') {
     try {
-      const styleId = msg.styleId;
-      const nodes = [];
+      const styles = msg.styles;
       
-      // Fonction pour trouver tous les nœuds avec un style spécifique
-      function findNodesWithStyle(node) {
-        if (node.type === 'TEXT' && 
-            node.textStyleId && 
-            typeof node.textStyleId === 'string' && 
-            node.textStyleId === styleId) {
-          nodes.push(node);
-        }
-        if ('children' in node) {
-          for (const child of node.children) {
-            findNodesWithStyle(child);
+      // Créer une nouvelle frame
+      const frame = figma.createFrame();
+      frame.name = 'Styles typographiques';
+      frame.fills = [{ type: 'SOLID', color: { r: 1, g: 1, b: 1 } }];
+      frame.layoutMode = 'VERTICAL';
+      frame.primaryAxisSizingMode = 'AUTO';
+      frame.counterAxisSizingMode = 'AUTO';
+      frame.itemSpacing = 16;
+      frame.paddingTop = 24;
+      frame.paddingRight = 24;
+      frame.paddingBottom = 24;
+      frame.paddingLeft = 24;
+      
+      // Ajouter la frame à la page d'abord
+      figma.currentPage.appendChild(frame);
+      
+      // Positionner la frame sur la page courante
+      frame.x = figma.viewport.center.x - 200;
+      frame.y = figma.viewport.center.y - 200;
+      
+      // Fonction pour créer les textes de manière synchrone
+      function createTextNodes() {
+        let textNodesCreated = 0;
+        
+        for (const style of styles) {
+          try {
+            const textNode = figma.createText();
+            
+            // Créer un texte d'exemple basé sur le nom du style
+            const exampleText = style.name;
+            textNode.characters = exampleText;
+            
+            // Appliquer le style typographique
+            textNode.textStyleId = style.id;
+            
+            // Configurer les propriétés du texte pour l'autolayout
+            textNode.layoutAlign = 'STRETCH';
+            textNode.textAlignHorizontal = 'LEFT';
+            
+            // Ajouter le texte à la frame (autolayout)
+            frame.appendChild(textNode);
+            textNodesCreated++;
+            
+          } catch (error) {
+            console.warn('Erreur lors de la création du texte pour le style:', style.name, error);
+            
+            // En cas d'erreur, créer un texte basique
+            try {
+              const fallbackTextNode = figma.createText();
+              fallbackTextNode.characters = style.name;
+              fallbackTextNode.layoutAlign = 'STRETCH';
+              fallbackTextNode.textAlignHorizontal = 'LEFT';
+              frame.appendChild(fallbackTextNode);
+              textNodesCreated++;
+            } catch (fallbackError) {
+              console.warn('Impossible de créer le texte de fallback:', fallbackError);
+            }
           }
         }
+        
+        return textNodesCreated;
       }
       
-      // Parcourir toutes les pages
-      for (const page of figma.root.children) {
-        findNodesWithStyle(page);
-      }
+      // Créer tous les nœuds de texte
+      const createdCount = createTextNodes();
       
-      if (nodes.length > 0) {
-        figma.currentPage.selection = nodes;
-        figma.viewport.scrollAndZoomIntoView(nodes);
-        figma.notify(`${nodes.length} élément(s) sélectionné(s)`);
-      } else {
-        figma.notify('Aucun élément trouvé avec ce style');
-      }
+      // Ajuster la frame après ajout des enfants
+      frame.resize(400, frame.height);
+      
+      // Sélectionner la frame créée
+      figma.currentPage.selection = [frame];
+      figma.viewport.scrollAndZoomIntoView([frame]);
+      
+      figma.notify(`Frame créée avec ${createdCount} styles typographiques`);
       
     } catch (error) {
-      figma.notify('Erreur lors de la sélection: ' + error.message);
+      console.error('Erreur lors de la création de la frame:', error);
+      figma.notify('Erreur lors de la création de la frame: ' + error.message);
     }
   }
 };
