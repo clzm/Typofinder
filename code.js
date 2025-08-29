@@ -1,10 +1,10 @@
 // code.js - Plugin principal
 figma.showUI(__html__, { width: 320, height: 500 });
 
-// Fonction pour parcourir tous les nœuds du document
+// Fonction pour parcourir tous les nÅ"uds du document
 function traverseNode(node, textStyles) {
   if (node.type === 'TEXT') {
-    // Vérifier si le texte utilise un style de texte
+    // VÃ©rifier si le texte utilise un style de texte
     if (node.textStyleId && node.textStyleId !== '' && typeof node.textStyleId === 'string') {
       try {
         const style = figma.getStyleById(node.textStyleId);
@@ -30,7 +30,7 @@ function traverseNode(node, textStyles) {
         }
       } catch (error) {
         // Ignorer les erreurs de style invalides
-        console.warn('Style invalide ignoré:', node.textStyleId);
+        console.warn('Style invalide ignorÃ©:', node.textStyleId);
       }
     }
   }
@@ -58,7 +58,7 @@ function extractTextStyles() {
   for (let i = 0; i < figma.root.children.length; i++) {
     const page = figma.root.children[i];
     
-    // Mettre à jour la progression
+    // Mettre Ã  jour la progression
     figma.ui.postMessage({
       type: 'progress-update',
       currentPage: i + 1,
@@ -69,27 +69,35 @@ function extractTextStyles() {
     traverseNode(page, textStyles);
   }
   
-  // Fonction pour déterminer la priorité de catégorie
+  // Fonction pour dÃ©terminer la prioritÃ© de catÃ©gorie
   function getCategoryPriority(styleName) {
     const name = styleName.toLowerCase();
     if (name.startsWith('display')) return 1;
     if (name.startsWith('title')) return 2;
     if (name.startsWith('text')) return 3;
-    if (name.startsWith('paragraph')) return 5; // Paragraphs à la fin
+    if (name.startsWith('paragraph')) return 5; // Paragraphs Ã  la fin
     return 4; // Autres styles avant les paragraphs
   }
   
-  // Fonction pour déterminer la priorité de taille (2xs est plus petit que xs)
+  // Fonction pour déterminer la priorité de taille (8XL est le plus gros, puis 7XL, etc.)
   function getSizePriority(styleName) {
     const name = styleName.toLowerCase();
-    if (name.includes('2xl')) return 1;
-    if (name.includes('xl')) return 2;
-    if (name.includes('lg')) return 3;
-    if (name.includes('md')) return 4;
-    if (name.includes('sm')) return 5;
-    if (name.includes('xs') && !name.includes('2xs')) return 6;
-    if (name.includes('2xs')) return 7; // 2xs est le plus petit
-    return 8; // Autres
+    
+    // Gérer les tailles numériques XL (8xl, 7xl, 6xl, etc.)
+    if (name.includes('8xl')) return 1;
+    if (name.includes('7xl')) return 2;
+    if (name.includes('6xl')) return 3;
+    if (name.includes('5xl')) return 4;
+    if (name.includes('4xl')) return 5;
+    if (name.includes('3xl')) return 6;
+    if (name.includes('2xl')) return 7;
+    if (name.includes('xl') && !name.includes('2xl') && !name.includes('3xl') && !name.includes('4xl') && !name.includes('5xl') && !name.includes('6xl') && !name.includes('7xl') && !name.includes('8xl')) return 8;
+    if (name.includes('lg')) return 9;
+    if (name.includes('md')) return 10;
+    if (name.includes('sm')) return 11;
+    if (name.includes('xs') && !name.includes('2xs')) return 12;
+    if (name.includes('2xs')) return 13; // 2xs est le plus petit
+    return 14; // Autres tailles non reconnues à la fin
   }
   
   // Fonction pour déterminer la priorité du poids de police
@@ -116,7 +124,7 @@ function extractTextStyles() {
       return categoryA - categoryB;
     }
     
-    // Puis par taille (2xl > xl > lg > md > sm > xs > 2xs)
+    // Puis par taille (8xl > 7xl > 6xl > ... > xs > 2xs)
     const sizeA = getSizePriority(a.name);
     const sizeB = getSizePriority(b.name);
     
@@ -141,12 +149,12 @@ function extractTextStyles() {
   return stylesArray;
 }
 
-// Écouter les messages de l'UI
+// Ã‰couter les messages de l'UI
 figma.ui.onmessage = msg => {
   console.log('Message reçu du plugin:', msg);
   
   if (msg.type === 'extract-styles') {
-    console.log('Début de l\'extraction des styles');
+    console.log('DÃ©but de l\'extraction des styles');
     try {
       const styles = extractTextStyles();
       console.log('Styles extraits:', styles.length);
@@ -167,88 +175,5 @@ figma.ui.onmessage = msg => {
     figma.closePlugin();
   }
   
-  if (msg.type === 'create-styles-frame') {
-    try {
-      const styles = msg.styles;
-      
-      // Créer une nouvelle frame
-      const frame = figma.createFrame();
-      frame.name = 'Styles typographiques';
-      frame.fills = [{ type: 'SOLID', color: { r: 1, g: 1, b: 1 } }];
-      frame.layoutMode = 'VERTICAL';
-      frame.primaryAxisSizingMode = 'AUTO';
-      frame.counterAxisSizingMode = 'AUTO';
-      frame.itemSpacing = 16;
-      frame.paddingTop = 24;
-      frame.paddingRight = 24;
-      frame.paddingBottom = 24;
-      frame.paddingLeft = 24;
-      
-      // Ajouter la frame à la page d'abord
-      figma.currentPage.appendChild(frame);
-      
-      // Positionner la frame sur la page courante
-      frame.x = figma.viewport.center.x - 200;
-      frame.y = figma.viewport.center.y - 200;
-      
-      // Fonction pour créer les textes de manière synchrone
-      function createTextNodes() {
-        let textNodesCreated = 0;
-        
-        for (const style of styles) {
-          try {
-            const textNode = figma.createText();
-            
-            // Créer un texte d'exemple basé sur le nom du style
-            const exampleText = style.name;
-            textNode.characters = exampleText;
-            
-            // Appliquer le style typographique
-            textNode.textStyleId = style.id;
-            
-            // Configurer les propriétés du texte pour l'autolayout
-            textNode.layoutAlign = 'STRETCH';
-            textNode.textAlignHorizontal = 'LEFT';
-            
-            // Ajouter le texte à la frame (autolayout)
-            frame.appendChild(textNode);
-            textNodesCreated++;
-            
-          } catch (error) {
-            console.warn('Erreur lors de la création du texte pour le style:', style.name, error);
-            
-            // En cas d'erreur, créer un texte basique
-            try {
-              const fallbackTextNode = figma.createText();
-              fallbackTextNode.characters = style.name;
-              fallbackTextNode.layoutAlign = 'STRETCH';
-              fallbackTextNode.textAlignHorizontal = 'LEFT';
-              frame.appendChild(fallbackTextNode);
-              textNodesCreated++;
-            } catch (fallbackError) {
-              console.warn('Impossible de créer le texte de fallback:', fallbackError);
-            }
-          }
-        }
-        
-        return textNodesCreated;
-      }
-      
-      // Créer tous les nœuds de texte
-      const createdCount = createTextNodes();
-      
-      // Ajuster la frame après ajout des enfants
-      frame.resize(400, frame.height);
-      
-      // Sélectionner la frame créée
-      figma.currentPage.selection = [frame];
-      figma.viewport.scrollAndZoomIntoView([frame]);
-      
-      figma.notify(`Frame créée avec ${createdCount} styles typographiques`);
-      
-    } catch (error) {
-      console.error('Erreur lors de la création de la frame:', error);
-      figma.notify('Erreur lors de la création de la frame: ' + error.message);
-    }
-  }
+
 };

@@ -14,9 +14,7 @@
         }
 
         .header {
-            display: flex;
-            align-items: center;
-            justify-content: space-between;
+            text-align: center;
             margin-bottom: 16px;
             padding-bottom: 12px;
             border-bottom: 1px solid #e1e5e9;
@@ -32,6 +30,7 @@
             color: #8c8c8c;
             font-size: 11px;
             margin-top: 2px;
+            margin-bottom: 16px;
         }
 
         .extract-btn {
@@ -179,44 +178,12 @@
             color: #1565c0;
             text-align: center;
         }
-
-        .stats-with-button {
-            display: flex;
-            align-items: center;
-            justify-content: space-between;
-            gap: 16px;
-            margin-bottom: 16px;
-        }
-
-        .create-frame-btn {
-            background: #0d99ff;
-            color: white;
-            border: none;
-            padding: 8px 16px;
-            border-radius: 6px;
-            cursor: pointer;
-            font-weight: 500;
-            font-size: 12px;
-            transition: background 0.2s;
-            white-space: nowrap;
-        }
-
-        .create-frame-btn:hover {
-            background: #0084e6;
-        }
-
-        .create-frame-btn:disabled {
-            background: #ccc;
-            cursor: not-allowed;
-        }
     </style>
 </head>
 <body>
     <div class="header">
-        <div>
-            <div class="title">Typofinder</div>
-            <div class="subtitle">Styles typographiques des librairies</div>
-        </div>
+        <div class="title">Typofinder</div>
+        <div class="subtitle">Trouve les typographies utilisées par la librairie dans ton fichier</div>
         <button id="extractBtn" class="extract-btn">Analyser</button>
     </div>
 
@@ -228,7 +195,7 @@
     <script>
         let isLoading = false;
         
-        // Éléments du DOM
+        // Ã‰lÃ©ments du DOM
         const extractBtn = document.getElementById('extractBtn');
         const stylesContainer = document.getElementById('stylesContainer');
         const loadingContainer = document.getElementById('loadingContainer');
@@ -253,7 +220,7 @@
             statsContainer.innerHTML = '';
         }
 
-        // Fonction pour mettre à jour la progression
+        // Fonction pour mettre Ã  jour la progression
         function updateProgress(current, total, pageName = '') {
             const progressBar = document.getElementById('progressBar');
             const loadingText = document.querySelector('.loading-text');
@@ -268,7 +235,7 @@
                 }
                 
                 if (progressInfo) {
-                    progressInfo.textContent = `${current} / ${total} pages analysées`;
+                    progressInfo.textContent = `${current} / ${total} pages analysÃ©es`;
                 }
             }
         }
@@ -330,32 +297,19 @@
             if (styles.length === 0) {
                 stylesContainer.innerHTML = `
                     <div class="empty-state">
-                        <div class="empty-icon">📝</div>
+                        <div class="empty-icon">ðŸ"</div>
                         <div>Aucun style typographique de librairie trouvé</div>
                         <div style="font-size: 10px; margin-top: 8px; opacity: 0.7;">
-                            Seuls les styles provenant de librairies attachées sont affichés
+                            Seuls les styles provenant de librairies attachés sont affichés
                         </div>
                     </div>
                 `;
             } else {
                 statsContainer.innerHTML = `
-                    <div class="stats-with-button">
-                        <div class="stats">
-                            ${styles.length} style${styles.length > 1 ? 's' : ''} typographique${styles.length > 1 ? 's' : ''} trouvé${styles.length > 1 ? 's' : ''}
-                        </div>
-                        <button class="create-frame-btn" id="createFrameBtn">Coller</button>
+                    <div class="stats">
+                        ${styles.length} style${styles.length > 1 ? 's' : ''} typographique${styles.length > 1 ? 's' : ''} trouvÃ©${styles.length > 1 ? 's' : ''}
                     </div>
                 `;
-                
-                // Event listener pour le bouton de création de frame
-                document.getElementById('createFrameBtn').addEventListener('click', () => {
-                    parent.postMessage({
-                        pluginMessage: { 
-                            type: 'create-styles-frame',
-                            styles: styles
-                        }
-                    }, '*');
-                });
                 
                 const stylesHTML = styles.map(style => `
                     <div class="style-item">
@@ -418,7 +372,7 @@
                 console.log('Initialisation progression:', msg.totalPages, 'pages');
             } else if (msg && msg.type === 'progress-update') {
                 updateProgress(msg.currentPage, msg.totalPages, msg.pageName);
-                console.log('Mise à jour progression:', msg.currentPage, '/', msg.totalPages, '-', msg.pageName);
+                console.log('Mise Ã  jour progression:', msg.currentPage, '/', msg.totalPages, '-', msg.pageName);
             } else if (msg && msg.type === 'styles-extracted') {
                 displayStyles(msg.styles);
             } else if (msg && msg.type === 'error') {
@@ -427,7 +381,7 @@
             }
         };
 
-        // Test de connexion au démarrage
+        // Test de connexion au dÃ©marrage
         window.onload = () => {
             console.log('Plugin UI chargé');
             // Ne pas lancer automatiquement l'extraction
