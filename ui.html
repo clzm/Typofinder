@@ -7,42 +7,49 @@
         body {
             font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
             margin: 0;
-            padding: 16px;
+            padding: 0;
             background: #f8f9fa;
             font-size: 12px;
             line-height: 1.4;
+            height: 100vh;
+            overflow: hidden;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
         }
 
         .header {
             text-align: center;
-            margin-bottom: 16px;
-            padding-bottom: 12px;
-            border-bottom: 1px solid #e1e5e9;
+            padding: 20px;
+            max-width: 280px;
         }
 
         .title {
             font-weight: 600;
-            font-size: 14px;
+            font-size: 16px;
             color: #1e1e1e;
+            margin-bottom: 8px;
         }
 
         .subtitle {
             color: #8c8c8c;
-            font-size: 11px;
-            margin-top: 2px;
-            margin-bottom: 16px;
+            font-size: 12px;
+            margin-bottom: 24px;
+            line-height: 1.4;
         }
 
         .extract-btn {
             background: #0d99ff;
             color: white;
             border: none;
-            padding: 8px 16px;
-            border-radius: 6px;
+            padding: 12px 24px;
+            border-radius: 8px;
             cursor: pointer;
             font-weight: 500;
-            font-size: 12px;
+            font-size: 13px;
             transition: background 0.2s;
+            box-shadow: 0 2px 4px rgba(13, 153, 255, 0.2);
         }
 
         .extract-btn:hover {
@@ -52,20 +59,28 @@
         .extract-btn:disabled {
             background: #ccc;
             cursor: not-allowed;
+            box-shadow: none;
         }
 
         .styles-container {
-            max-height: 400px;
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
             overflow-y: auto;
-            border-radius: 8px;
             background: white;
-            border: 1px solid #e1e5e9;
+            padding: 16px;
         }
 
         .style-item {
             padding: 12px;
             border-bottom: 1px solid #f1f3f4;
             transition: background 0.2s;
+            display: flex;
+            align-items: flex-start;
+            gap: 12px;
+            cursor: pointer;
         }
 
         .style-item:hover {
@@ -76,6 +91,11 @@
             border-bottom: none;
         }
 
+        .style-content {
+            flex: 1;
+            min-width: 0;
+        }
+
         .style-name {
             font-weight: 600;
             color: #1e1e1e;
@@ -83,6 +103,7 @@
             display: flex;
             align-items: center;
             gap: 6px;
+            flex-wrap: wrap;
         }
 
         .library-badge {
@@ -110,6 +131,46 @@
             font-weight: 500;
         }
 
+        .style-checkbox-container {
+            flex-shrink: 0;
+            padding-top: 2px;
+        }
+
+        .style-checkbox {
+            width: 16px;
+            height: 16px;
+            cursor: pointer;
+            appearance: none;
+            -webkit-appearance: none;
+            -moz-appearance: none;
+            border: 2px solid #d1d5db;
+            border-radius: 3px;
+            background-color: white;
+            position: relative;
+            transition: all 0.2s ease;
+        }
+
+        .style-checkbox:hover {
+            border-color: #0d99ff;
+        }
+
+        .style-checkbox:checked {
+            background-color: #0d99ff;
+            border-color: #0d99ff;
+        }
+
+        .style-checkbox:checked::after {
+            content: '';
+            position: absolute;
+            left: 2px;
+            top: -1px;
+            width: 4px;
+            height: 8px;
+            border: solid white;
+            border-width: 0 1.5px 1.5px 0;
+            transform: rotate(45deg);
+        }
+
         .empty-state {
             text-align: center;
             padding: 40px 20px;
@@ -126,6 +187,11 @@
             text-align: center;
             padding: 20px;
             color: #8c8c8c;
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            width: 280px;
         }
 
         .progress-container {
@@ -166,6 +232,10 @@
             border-radius: 6px;
             margin-bottom: 16px;
             font-size: 11px;
+            position: absolute;
+            top: 20px;
+            left: 20px;
+            right: 20px;
         }
 
         .stats {
@@ -177,35 +247,71 @@
             font-size: 11px;
             color: #1565c0;
             text-align: center;
+            position: sticky;
+            top: 0;
+            z-index: 10;
+        }
+
+        .back-btn {
+            position: absolute;
+            top: 16px;
+            left: 16px;
+            background: #f1f3f4;
+            border: none;
+            padding: 8px 12px;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 11px;
+            color: #666;
+            transition: background 0.2s;
+        }
+
+        .back-btn:hover {
+            background: #e8eaed;
+        }
+
+        .centered-content {
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
         }
     </style>
 </head>
 <body>
-    <div class="header">
-        <div class="title">Typofinder</div>
-        <div class="subtitle">Trouve les typographies utilisées par la librairie dans ton fichier</div>
-        <button id="extractBtn" class="extract-btn">Analyser</button>
+    <div id="mainContent" class="centered-content">
+        <div class="header">
+            <div class="title">Typofinder</div>
+            <div class="subtitle">Trouve les typographies utilisées par la librairie dans ton fichier</div>
+            <button id="extractBtn" class="extract-btn">Analyser</button>
+        </div>
     </div>
 
     <div id="errorContainer"></div>
     <div id="statsContainer"></div>
     <div id="loadingContainer"></div>
-    <div id="stylesContainer" class="styles-container" style="display: none;"></div>
+    <div id="stylesContainer" class="styles-container" style="display: none;">
+        <button id="backBtn" class="back-btn" style="display: none;">← Retour</button>
+    </div>
 
     <script>
         let isLoading = false;
         
-        // Ã‰lÃ©ments du DOM
+        // Éléments du DOM
         const extractBtn = document.getElementById('extractBtn');
         const stylesContainer = document.getElementById('stylesContainer');
         const loadingContainer = document.getElementById('loadingContainer');
         const errorContainer = document.getElementById('errorContainer');
         const statsContainer = document.getElementById('statsContainer');
+        const mainContent = document.getElementById('mainContent');
+        const backBtn = document.getElementById('backBtn');
 
         // Fonction pour afficher le loading
         function showLoading() {
             isLoading = true;
             extractBtn.disabled = true;
+            mainContent.style.display = 'none';
             loadingContainer.innerHTML = `
                 <div class="loading">
                     <div class="loading-text">Initialisation de l'analyse...</div>
@@ -220,7 +326,7 @@
             statsContainer.innerHTML = '';
         }
 
-        // Fonction pour mettre Ã  jour la progression
+        // Fonction pour mettre à jour la progression
         function updateProgress(current, total, pageName = '') {
             const progressBar = document.getElementById('progressBar');
             const loadingText = document.querySelector('.loading-text');
@@ -235,7 +341,7 @@
                 }
                 
                 if (progressInfo) {
-                    progressInfo.textContent = `${current} / ${total} pages analysÃ©es`;
+                    progressInfo.textContent = `${current} / ${total} pages analysées`;
                 }
             }
         }
@@ -249,7 +355,18 @@
 
         // Fonction pour afficher une erreur
         function showError(message) {
+            hideLoading();
+            mainContent.style.display = 'flex';
             errorContainer.innerHTML = `<div class="error">${message}</div>`;
+        }
+
+        // Fonction pour retourner à l'accueil
+        function showHome() {
+            stylesContainer.style.display = 'none';
+            backBtn.style.display = 'none';
+            mainContent.style.display = 'flex';
+            statsContainer.innerHTML = '';
+            errorContainer.innerHTML = '';
         }
 
         // Fonction pour formater la taille de police
@@ -290,66 +407,95 @@
         // Fonction pour afficher les styles
         function displayStyles(styles) {
             hideLoading();
-            
-            // Masquer le header une fois les résultats affichés
-            document.querySelector('.header').style.display = 'none';
+            mainContent.style.display = 'none';
             
             if (styles.length === 0) {
                 stylesContainer.innerHTML = `
+                    <button id="backBtn" class="back-btn">← Retour</button>
                     <div class="empty-state">
-                        <div class="empty-icon">ðŸ"</div>
+                        <div class="empty-icon">🔍</div>
                         <div>Aucun style typographique de librairie trouvé</div>
                         <div style="font-size: 10px; margin-top: 8px; opacity: 0.7;">
-                            Seuls les styles provenant de librairies attachés sont affichés
+                            Seuls les styles provenant de librairies attachées sont affichés
                         </div>
                     </div>
                 `;
             } else {
-                statsContainer.innerHTML = `
+                const statsHTML = `
                     <div class="stats">
-                        ${styles.length} style${styles.length > 1 ? 's' : ''} typographique${styles.length > 1 ? 's' : ''} trouvÃ©${styles.length > 1 ? 's' : ''}
+                        ${styles.length} style${styles.length > 1 ? 's' : ''} typographique${styles.length > 1 ? 's' : ''} trouvé${styles.length > 1 ? 's' : ''}
                     </div>
                 `;
                 
-                const stylesHTML = styles.map(style => `
-                    <div class="style-item">
-                        <div class="style-name">
-                            ${style.name}
-                            ${style.remote ? '<span class="library-badge">Librairie</span>' : ''}
+                const stylesHTML = styles.map((style, index) => `
+                    <div class="style-item" data-checkbox-id="checkbox-${index}">
+                        <div class="style-content">
+                            <div class="style-name">
+                                ${style.name}
+                                ${style.remote ? '<span class="library-badge">Librairie</span>' : ''}
+                            </div>
+                            <div class="style-details">
+                                <span class="style-property">
+                                    <span class="property-label">Police:</span> ${style.fontFamily} ${style.fontWeight}
+                                </span>
+                                <span class="style-property">
+                                    <span class="property-label">Taille:</span> ${formatFontSize(style.fontSize)}
+                                </span>
+                                <span class="style-property">
+                                    <span class="property-label">Interlignage:</span> ${formatLineHeight(style.lineHeight)}
+                                </span>
+                                ${style.letterSpacing && style.letterSpacing !== 0 ? `
+                                    <span class="style-property">
+                                        <span class="property-label">Espacement:</span> ${formatLetterSpacing(style.letterSpacing)}
+                                    </span>
+                                ` : ''}
+                                ${style.textCase && style.textCase !== 'ORIGINAL' ? `
+                                    <span class="style-property">
+                                        <span class="property-label">Casse:</span> ${style.textCase}
+                                    </span>
+                                ` : ''}
+                                ${style.description ? `
+                                    <div style="margin-top: 6px; font-style: italic; opacity: 0.8;">
+                                        ${style.description}
+                                    </div>
+                                ` : ''}
+                            </div>
                         </div>
-                        <div class="style-details">
-                            <span class="style-property">
-                                <span class="property-label">Police:</span> ${style.fontFamily} ${style.fontWeight}
-                            </span>
-                            <span class="style-property">
-                                <span class="property-label">Taille:</span> ${formatFontSize(style.fontSize)}
-                            </span>
-                            <span class="style-property">
-                                <span class="property-label">Interlignage:</span> ${formatLineHeight(style.lineHeight)}
-                            </span>
-                            ${style.letterSpacing && style.letterSpacing !== 0 ? `
-                                <span class="style-property">
-                                    <span class="property-label">Espacement:</span> ${formatLetterSpacing(style.letterSpacing)}
-                                </span>
-                            ` : ''}
-                            ${style.textCase && style.textCase !== 'ORIGINAL' ? `
-                                <span class="style-property">
-                                    <span class="property-label">Casse:</span> ${style.textCase}
-                                </span>
-                            ` : ''}
-                            ${style.description ? `
-                                <div style="margin-top: 6px; font-style: italic; opacity: 0.8;">
-                                    ${style.description}
-                                </div>
-                            ` : ''}
+                        <div class="style-checkbox-container">
+                            <input type="checkbox" class="style-checkbox" id="checkbox-${index}" title="Marquer comme déposé sur le fichier">
                         </div>
                     </div>
                 `).join('');
                 
-                stylesContainer.innerHTML = stylesHTML;
+                stylesContainer.innerHTML = `
+                    <button id="backBtn" class="back-btn">← Retour</button>
+                    ${statsHTML}
+                    ${stylesHTML}
+                `;
             }
             
             stylesContainer.style.display = 'block';
+            
+            // Réattacher l'event listener au bouton retour
+            const newBackBtn = document.getElementById('backBtn');
+            if (newBackBtn) {
+                newBackBtn.addEventListener('click', showHome);
+            }
+            
+            // Ajouter les event listeners pour les clicks sur les lignes
+            const styleItems = document.querySelectorAll('.style-item');
+            styleItems.forEach(item => {
+                item.addEventListener('click', (e) => {
+                    // Éviter de déclencher le click si on clique directement sur la checkbox
+                    if (e.target.type === 'checkbox') return;
+                    
+                    const checkboxId = item.getAttribute('data-checkbox-id');
+                    const checkbox = document.getElementById(checkboxId);
+                    if (checkbox) {
+                        checkbox.checked = !checkbox.checked;
+                    }
+                });
+            });
         }
 
         // Event listener pour le bouton d'extraction
@@ -363,6 +509,9 @@
             }, '*');
         });
 
+        // Event listener pour le bouton retour
+        backBtn.addEventListener('click', showHome);
+
         // Écouter les messages du plugin
         window.onmessage = (event) => {
             console.log('Message reçu:', event.data);
@@ -372,19 +521,17 @@
                 console.log('Initialisation progression:', msg.totalPages, 'pages');
             } else if (msg && msg.type === 'progress-update') {
                 updateProgress(msg.currentPage, msg.totalPages, msg.pageName);
-                console.log('Mise Ã  jour progression:', msg.currentPage, '/', msg.totalPages, '-', msg.pageName);
+                console.log('Mise à jour progression:', msg.currentPage, '/', msg.totalPages, '-', msg.pageName);
             } else if (msg && msg.type === 'styles-extracted') {
                 displayStyles(msg.styles);
             } else if (msg && msg.type === 'error') {
-                hideLoading();
                 showError(msg.message);
             }
         };
 
-        // Test de connexion au dÃ©marrage
+        // Test de connexion au démarrage
         window.onload = () => {
             console.log('Plugin UI chargé');
-            // Ne pas lancer automatiquement l'extraction
         };
     </script>
 </body>

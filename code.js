@@ -1,16 +1,22 @@
 // code.js - Plugin principal
 figma.showUI(__html__, { width: 320, height: 500 });
 
-// Fonction pour parcourir tous les nÅ"uds du document
+// Fonction pour vérifier si un style doit être exclu
+function shouldExcludeStyle(styleName) {
+  const name = styleName.toLowerCase();
+  return name.startsWith('display') || name.startsWith('subheading');
+}
+
+// Fonction pour parcourir tous les nœuds du document
 function traverseNode(node, textStyles) {
   if (node.type === 'TEXT') {
-    // VÃ©rifier si le texte utilise un style de texte
+    // Vérifier si le texte utilise un style de texte
     if (node.textStyleId && node.textStyleId !== '' && typeof node.textStyleId === 'string') {
       try {
         const style = figma.getStyleById(node.textStyleId);
         if (style && !textStyles.has(style.id)) {
-          // Vérifier si le style provient d'une librairie (remote)
-          if (style.remote) {
+          // Vérifier si le style provient d'une librairie (remote) ET n'est pas exclu
+          if (style.remote && !shouldExcludeStyle(style.name)) {
             textStyles.set(style.id, {
               id: style.id,
               name: style.name,
@@ -30,7 +36,7 @@ function traverseNode(node, textStyles) {
         }
       } catch (error) {
         // Ignorer les erreurs de style invalides
-        console.warn('Style invalide ignorÃ©:', node.textStyleId);
+        console.warn('Style invalide ignoré:', node.textStyleId);
       }
     }
   }
@@ -58,7 +64,7 @@ function extractTextStyles() {
   for (let i = 0; i < figma.root.children.length; i++) {
     const page = figma.root.children[i];
     
-    // Mettre Ã  jour la progression
+    // Mettre à jour la progression
     figma.ui.postMessage({
       type: 'progress-update',
       currentPage: i + 1,
@@ -69,14 +75,14 @@ function extractTextStyles() {
     traverseNode(page, textStyles);
   }
   
-  // Fonction pour dÃ©terminer la prioritÃ© de catÃ©gorie
+  // Fonction pour déterminer la priorité de catégorie
   function getCategoryPriority(styleName) {
     const name = styleName.toLowerCase();
-    if (name.startsWith('display')) return 1;
-    if (name.startsWith('title')) return 2;
-    if (name.startsWith('text')) return 3;
-    if (name.startsWith('paragraph')) return 5; // Paragraphs Ã  la fin
-    return 4; // Autres styles avant les paragraphs
+    // Note: Display et Subheading sont maintenant exclus en amont
+    if (name.startsWith('title')) return 1;
+    if (name.startsWith('text')) return 2;
+    if (name.startsWith('paragraph')) return 4; // Paragraphs à la fin
+    return 3; // Autres styles avant les paragraphs
   }
   
   // Fonction pour déterminer la priorité de taille (8XL est le plus gros, puis 7XL, etc.)
@@ -149,12 +155,12 @@ function extractTextStyles() {
   return stylesArray;
 }
 
-// Ã‰couter les messages de l'UI
+// Écouter les messages de l'UI
 figma.ui.onmessage = msg => {
   console.log('Message reçu du plugin:', msg);
   
   if (msg.type === 'extract-styles') {
-    console.log('DÃ©but de l\'extraction des styles');
+    console.log('Début de l\'extraction des styles');
     try {
       const styles = extractTextStyles();
       console.log('Styles extraits:', styles.length);
@@ -174,6 +180,4 @@ figma.ui.onmessage = msg => {
   if (msg.type === 'close-plugin') {
     figma.closePlugin();
   }
-  
-
 };
