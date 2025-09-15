@@ -49,30 +49,37 @@ function traverseNode(node, textStyles) {
   }
 }
 
-// Fonction pour extraire les styles typographiques
-function extractTextStyles() {
+// Fonction pour extraire les styles typographiques avec progression
+async function extractTextStyles() {
   const textStyles = new Map();
-  const totalPages = figma.root.children.length;
+  const pages = figma.root.children;
+  const totalPages = pages.length;
   
-  // Envoyer le nombre total de pages pour initialiser la progression
+  // Envoyer le début de la progression
   figma.ui.postMessage({
-    type: 'progress-init',
-    totalPages: totalPages
+    type: 'analysis-progress',
+    current: 0,
+    total: totalPages,
+    phase: 'pages'
   });
   
   // Parcourir toutes les pages avec progression
-  for (let i = 0; i < figma.root.children.length; i++) {
-    const page = figma.root.children[i];
+  for (let i = 0; i < pages.length; i++) {
+    const page = pages[i];
     
     // Mettre à jour la progression
     figma.ui.postMessage({
-      type: 'progress-update',
-      currentPage: i + 1,
-      totalPages: totalPages,
-      pageName: page.name
+      type: 'analysis-progress',
+      current: i + 1,
+      total: totalPages,
+      phase: 'pages',
+      currentPageName: page.name
     });
     
     traverseNode(page, textStyles);
+    
+    // Petite pause pour permettre à l'UI de se mettre à jour
+    await new Promise(resolve => setTimeout(resolve, 10));
   }
   
   // Fonction pour déterminer la priorité de catégorie
@@ -156,13 +163,13 @@ function extractTextStyles() {
 }
 
 // Écouter les messages de l'UI
-figma.ui.onmessage = msg => {
+figma.ui.onmessage = async msg => {
   console.log('Message reçu du plugin:', msg);
   
   if (msg.type === 'extract-styles') {
     console.log('Début de l\'extraction des styles');
     try {
-      const styles = extractTextStyles();
+      const styles = await extractTextStyles();
       console.log('Styles extraits:', styles.length);
       figma.ui.postMessage({
         type: 'styles-extracted',

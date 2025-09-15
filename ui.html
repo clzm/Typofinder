@@ -194,19 +194,20 @@
             width: 280px;
         }
 
+        /* Nouvelle barre de progression améliorée */
         .progress-container {
             width: 100%;
-            height: 4px;
+            height: 6px;
             background: #e1e5e9;
-            border-radius: 2px;
+            border-radius: 3px;
             overflow: hidden;
-            margin: 8px 0 12px 0;
+            margin: 12px 0 16px 0;
         }
 
         .progress-bar {
             height: 100%;
             background: linear-gradient(90deg, #0d99ff, #40c4ff);
-            border-radius: 2px;
+            border-radius: 3px;
             width: 0%;
             transition: width 0.4s ease;
         }
@@ -214,14 +215,23 @@
         .loading-text {
             font-size: 12px;
             color: #666;
-            margin-top: 8px;
+            margin-bottom: 8px;
             min-height: 16px;
+            font-weight: 500;
         }
 
         .progress-info {
             font-size: 11px;
             color: #999;
-            margin-top: 4px;
+            margin-top: 8px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .progress-percentage {
+            font-weight: 500;
+            color: #0d99ff;
         }
 
         .error {
@@ -277,6 +287,18 @@
             align-items: center;
             height: 100vh;
         }
+
+        /* Animation pour la barre de progression */
+        @keyframes shimmer {
+            0% { background-position: -200px 0; }
+            100% { background-position: calc(200px + 100%) 0; }
+        }
+
+        .progress-bar.animated {
+            background: linear-gradient(90deg, #0d99ff 25%, #40c4ff 50%, #0d99ff 75%);
+            background-size: 200px 100%;
+            animation: shimmer 2s infinite;
+        }
     </style>
 </head>
 <body>
@@ -307,7 +329,7 @@
         const mainContent = document.getElementById('mainContent');
         const backBtn = document.getElementById('backBtn');
 
-        // Fonction pour afficher le loading
+        // Fonction pour afficher le loading avec progression améliorée
         function showLoading() {
             isLoading = true;
             extractBtn.disabled = true;
@@ -316,9 +338,12 @@
                 <div class="loading">
                     <div class="loading-text">Initialisation de l'analyse...</div>
                     <div class="progress-container">
-                        <div class="progress-bar" id="progressBar"></div>
+                        <div class="progress-bar animated" id="progressBar"></div>
                     </div>
-                    <div class="progress-info" id="progressInfo"></div>
+                    <div class="progress-info" id="progressInfo">
+                        <span id="progressDetails">Préparation...</span>
+                        <span class="progress-percentage" id="progressPercentage">0%</span>
+                    </div>
                 </div>
             `;
             stylesContainer.style.display = 'none';
@@ -330,18 +355,43 @@
         function updateProgress(current, total, pageName = '') {
             const progressBar = document.getElementById('progressBar');
             const loadingText = document.querySelector('.loading-text');
-            const progressInfo = document.getElementById('progressInfo');
+            const progressDetails = document.getElementById('progressDetails');
+            const progressPercentage = document.getElementById('progressPercentage');
             
-            if (progressBar) {
-                const percentage = (current / total) * 100;
+            if (progressBar && total > 0) {
+                const percentage = Math.round((current / total) * 100);
                 progressBar.style.width = `${percentage}%`;
                 
                 if (loadingText) {
-                    loadingText.textContent = `Analyse de la page "${pageName}"...`;
+                    if (pageName) {
+                        loadingText.textContent = `Analyse de la page "${pageName}"...`;
+                    } else {
+                        loadingText.textContent = `Analyse en cours...`;
+                    }
                 }
                 
-                if (progressInfo) {
-                    progressInfo.textContent = `${current} / ${total} pages analysées`;
+                if (progressDetails) {
+                    progressDetails.textContent = `${current} / ${total} pages analysées`;
+                }
+                
+                if (progressPercentage) {
+                    progressPercentage.textContent = `${percentage}%`;
+                }
+                
+                // Finalisation quand c'est terminé
+                if (current >= total) {
+                    setTimeout(() => {
+                        if (loadingText) {
+                            loadingText.textContent = 'Finalisation de l\'analyse...';
+                        }
+                        if (progressDetails) {
+                            progressDetails.textContent = 'Traitement des résultats...';
+                        }
+                        if (progressBar) {
+                            progressBar.classList.remove('animated');
+                            progressBar.style.width = '100%';
+                        }
+                    }, 100);
                 }
             }
         }
@@ -517,11 +567,11 @@
             console.log('Message reçu:', event.data);
             const msg = event.data.pluginMessage;
             
-            if (msg && msg.type === 'progress-init') {
-                console.log('Initialisation progression:', msg.totalPages, 'pages');
-            } else if (msg && msg.type === 'progress-update') {
-                updateProgress(msg.currentPage, msg.totalPages, msg.pageName);
-                console.log('Mise à jour progression:', msg.currentPage, '/', msg.totalPages, '-', msg.pageName);
+            if (msg && msg.type === 'analysis-progress') {
+                if (msg.phase === 'pages') {
+                    updateProgress(msg.current, msg.total, msg.currentPageName);
+                    console.log('Mise à jour progression:', msg.current, '/', msg.total, '-', msg.currentPageName || 'Page inconnue');
+                }
             } else if (msg && msg.type === 'styles-extracted') {
                 displayStyles(msg.styles);
             } else if (msg && msg.type === 'error') {
